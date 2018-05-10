@@ -28,7 +28,27 @@ def subscribe_intent_callback(hermes, intentMessage):
     conf = read_configuration_file(CONFIG_INI)
     action_wrapper(hermes, intentMessage, conf)
 
+import os.path
 
+def readStringFromFile():
+    home = os.path.expanduser("~")
+    fname = home + '/snips-strings/action-domi-currentTime-Datum_und_Uhrzeit.txt'
+    if os.path.isfile(fname):
+        with open(fname, 'r') as file:
+            return file.read()
+    else:
+        string = "Es ist {hours} Uhr {minutes} und {seconds} Sekunden."
+        if not os.path.exists(os.path.dirname(fname)):
+            try:
+                os.makedirs(os.path.dirname(fname))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise 
+        with open(fname, 'w') as file:
+            file.write(string)
+        return string
+
+    
 def action_wrapper(hermes, intentMessage, conf):
     """ Write the body of the function that will be executed once the intent is recognized. 
     In your scope, you have the following objects : 
@@ -44,7 +64,7 @@ def action_wrapper(hermes, intentMessage, conf):
     if hours == 1:
         result_sentence = "Gerade ist es ein Uhr {0} und {1} Sekunden.".format(minutes, seconds)
     else:
-        result_sentence = "Gerade sind es {0} Uhr {1} und {2} Sekunden.".format(hours, minutes, seconds)
+        result_sentence = readStringFromFile().format(hours=hours, minutes=minutes, seconds=seconds)
     current_session_id = intentMessage.session_id
     hermes.publish_end_session(current_session_id, result_sentence)
 
